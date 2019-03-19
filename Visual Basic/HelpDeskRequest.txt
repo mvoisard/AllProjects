@@ -1,0 +1,50 @@
+' Project: Help Desk Request
+' Author:  Max Voisard
+' Date:    November 21, 2016
+' Purpose: This web application allows a college staff to fill in a 
+'          web form requesting help from a computer help desk.
+
+Option Strict On
+
+Partial Class About
+    Inherits Page
+
+    Protected Sub btnSubmit_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSubmit.Click
+        ' The btnSubmit click event will display information the user has entered.
+        ' Declare and initialize variables
+        Dim strFirstName As String
+        Dim strLastName As String
+        Dim strEmail As String
+        Dim strPhone As String
+        Dim intLabNumber As Integer
+        Dim intComputerStation As Integer
+        Dim strOperatingSystem As String
+        Dim strMessage As String
+
+        ' Trim additional spaces entered by user
+        strFirstName = txtFirstName.Text.Trim
+        strLastName = txtLastName.Text.Trim
+        strEmail = txtFirstName.Text.Trim
+        strPhone = txtLastName.Text.Trim
+        strOperatingSystem = txtFirstName.Text.Trim
+
+        ' Determine if numbers entered are valid
+        ' and then display what the user entered.
+        If Not (intLabNumber >= 1 And intLabNumber <= 15) Then
+            lblLabNumberError.Visible = True
+            If Not (intComputerStation >= 1 And intComputerStation <= 30) Then
+                lblComputerStationError.Visible = True
+            Else
+                lblComputerStationError.Visible = False
+            End If
+        Else
+            strOperatingSystem = Convert.ToString(ddlOperatingSystem.SelectedItem.Text)
+            strMessage = "An order has been placed for: " & strFirstName & strLastName & "<br>" _
+                    & "Email Address: " & strEmail & "<br>"
+                strMessage &= "Phone: " & strPhone & "<br>" _
+                    & "Lab Number " & intLabNumber & " and Station Number " & intComputerStation
+                lblDescription.Text = strMessage
+            End If
+
+    End Sub
+End Class

@@ -1,0 +1,10 @@
+(dp0
+S'Cookies'
+p1
+S'Oreos'
+p2
+sS'Chocolate'
+p3
+S'Hersheys'
+p4
+s.

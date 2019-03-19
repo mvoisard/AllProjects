@@ -1,0 +1,458 @@
+Pascal:
+
+
+program exArrays;
+uses crt;
+const global;
+var
+  n: array[1..10] of integer;
+  i, j: integer;
+
+begin
+  for i := 1 to 10 do
+    n[i] := i + 100;
+  for j := 1 to 10 do
+    if (n[j] < 104) then
+    writeln('Numbers from 100 to 103: ', n[j]);
+    if (n[j] < 107) then
+    writeln('Numbers from 104 to 106: ', n[j]);
+    else
+    writeln('Numbers from 107 to 109: ', n[j]);
+    endif
+end.
+
+
+
+
+PROGRAM a1 (input,output);
+    USES dayio;
+
+    CONST
+        NotScheduled = '        ';
+        EmployeeMaxLen = 8;
+        FirstHour = 8;
+        LastHour = 17;
+        PastLastHour = 18;
+        TableDayWidth = 9;
+    TYPE 
+        { The employee name type. }
+        EmployeeType = string[EmployeeMaxLen];
+        HourType = 8..17;
+	DayType = 1..7;
+        ScheduleType = ARRAY [HourType, DayType] OF EmployeeType;
+        HourScanType = 8..18;
+
+    PROCEDURE ReadString(VAR Str: string);
+        VAR
+            Ch: char;
+        BEGIN
+            Ch := ' ';
+            WHILE (Ch = ' ') AND NOT eoln DO 
+                read(Ch);
+
+            IF Ch = ' ' THEN
+                Str := ''
+            ELSE
+                BEGIN 
+                    Str := '';
+                    WHILE (Ch <> ' ') AND NOT eoln DO
+                        BEGIN
+                            Str := Str + Ch;
+                            read(Ch)
+                        END;
+
+                    IF Ch <> ' ' THEN
+                        Str := Str + Ch
+                END
+        END; { ReadString }
+
+
+
+
+program exObjects;
+type 
+   Rectangle = object  
+   private  
+      length, width: integer; 
+   
+   public  
+      procedure setlength(l: integer);
+      function getlength(): integer;  
+      
+      procedure setwidth(w: integer);  
+      function getwidth(): integer;  
+      
+      procedure draw;
+end;
+var
+   r1: Rectangle;
+   pr1: ^Rectangle;
+
+procedure Rectangle.setlength(l: integer);
+begin
+   length := l;
+end;
+
+procedure Rectangle.setwidth(w: integer);
+begin
+   width :=w;
+end;
+
+function Rectangle.getlength(): integer;  
+begin
+   getlength := length;
+end;
+
+function Rectangle.getwidth(): integer;  
+begin
+   getwidth := width;
+end;
+
+procedure Rectangle.draw;
+var 
+   i, j: integer;
+begin
+   for i:= 1 to length do
+   begin
+     for j:= 1 to width do
+        write(' * ');
+     writeln;
+   end;
+end;
+
+begin
+   r1.setlength(3);
+   r1.setwidth(7);
+   
+   writeln('Draw a rectangle:', r1.getlength(), ' by ' , r1.getwidth());
+   r1.draw;
+   new(pr1);
+   pr1^.setlength(5);
+   pr1^.setwidth(4);
+   
+   writeln('Draw a rectangle:', pr1^.getlength(), ' by ' ,pr1^.getwidth());
+   pr1^.draw;
+   dispose(pr1);
+end.
+
+
+
+program DataFiles;
+type
+   StudentRecord = Record
+      s_name: String;
+      s_addr: String;
+      s_batchcode: String;
+   end;
+
+var
+   Student: StudentRecord;
+   f: file of StudentRecord;
+
+begin
+   Assign(f,'students.dat');
+   Rewrite(f);					(**Reset instead of Rewrite for opening and READING files**)
+   Student.s_name := 'John Smith';
+   Student.s_addr := 'United States of America';
+   Student.s_batchcode := 'Computer Science';
+   Write(f,Student);
+   Close(f);
+end.
+_____________________________________________________________________________
+
+Ruby:
+
+the_count = [1, 2, 3, 4, 5]
+fruits = ['apples', 'oranges', 'pears', 'apricots']
+change = [1, 'pennies', 2, 'dimes', 3, 'quarters']
+
+for number in the_count             # Loop can be for...in or variable.each/(0..Max# or array.size).each do |variable|
+  puts "This is count #{number}"    # puts statement is print statement
+end
+
+  puts "A fruit of type: #{fruit}"
+end
+
+change.each {|i| puts "I got #{i}" }
+
+# we can also build lists, first start with an empty one
+elements = []                       #  
+
+(0..5).each do |i|
+  puts "adding #{i} to the list."
+  elements.push(i)
+end
+
+elements.each {|i| puts "Element was: #{i}" }
+
+
+
+# Add the strings before and after around each parm and print
+def surround(before, after, *items)
+    items.each { |x| print before, x, after, "\n" }
+end
+
+surround('[', ']', 'this', 'that', 'the other')
+print "\n"
+
+surround('<', '>', 'Snakes', 'Turtles', 'Snails', 'Salamanders', 'Slugs',
+        'Newts')
+print "\n"
+
+def boffo(a, b, c, d)
+    print "a = #{a} b = #{b}, c = #{c}, d = #{d}\n"
+end
+
+# Use * to adapt between arrays and arguments
+a1 = ['snack', 'fast', 'junk', 'pizza']
+a2 = [4, 9]
+boffo(*a1)
+boffo(17, 3, *a2)
+
+
+
+
+# Class names must be capitalized.  Technically, it's a constant.
+class Fred
+  
+  # The initialize method is the constructor.  The @val is
+  # an object value.
+  def initialize(v)
+    @val = v
+  end
+
+  # Set it and get it.
+  def set(v)
+    @val = v
+  end
+
+  def get
+    return @val
+  end
+
+  def more(y)
+    @val += y
+  end
+
+  def less(y)
+    @val -= y
+  end
+
+  def to_s
+    return "Fred(val=" + @val.to_s + ")"
+  end
+end
+
+# Class Barney is derived from Fred with the usual meaning.
+class Barney < Fred
+  def initialize(x)
+    super(x)
+    @save = x
+  end
+
+  def chk
+    @save = @val
+  end
+
+  def restore
+    @val = @save
+  end
+
+  def to_s
+    return "(Backed-up) " + super + " [backup value: " + @save.to_s + "]"
+  end
+
+end
+
+# Objects are created by the new method of the class object.
+a = Fred.new(398)
+b = Barney.new(112)
+
+a.more(34)
+b.more(817)
+
+print "A: a = ", a, "\n   b = ", b, "\n";
+
+a.more(34)
+b.more(817)
+
+print "B: a = ", a, "\n   b = ", b, "\n";
+
+b.chk
+
+a.more(34)
+b.more(817)
+
+print "C: a = ", a, "\n   b = ", b, "\n";
+
+b.restore
+
+print "D: a = ", a, "\n   b = ", b, "\n";
+
+
+
+
+print "Please enter a past-tense verb: "
+verb = gets.chomp
+print "Please enter a noun: "
+noun = gets.chomp
+print "Please enter a proper noun: "
+prop_noun = gets.chomp
+print "Please enter a an adverb: "
+adv = gets.chomp
+
+begin
+# See where to put it.
+print "Please enter a file name: "
+fn = gets.chomp
+handle = open(fn,"w")
+printf(handle, "%s got a %s and\n%s %s around the block.\n",
+        prop_noun, noun, verb, adv)
+handle.close
+rescue
+    print "File read failed: " + $! + "\n"
+end
+
+
+
+if rno % 2 == 1 then
+    print "Ooooh, that's an odd number.\n"
+else
+    print "That's an even number.\n"
+    if rno > 2 then
+        print "It's not prime, BTW.\n"
+    end
+end
+
+
+
+
+# THESE ARE HASHES!!!
+z = { 'mike' => 75, 'bill' => 18, 'alice' => 32 }
+z['joe'] = 44
+print z['bill'], " ", z['joe'], " ", z["smith"], "\n"
+print z.has_key?('mike'), " ", z.has_key?("jones"), "\n"
+________________________________________________________________
+
+COBOL:
+
+IDENTIFICATION DIVISION.
+PROGRAM-ID.  PerformFormat3.
+AUTHOR.  Michael Coughlan.
+
+PROCEDURE DIVISION.
+Begin.
+    PERFORM UNTIL IterCount = 5
+       DISPLAY "IterCount = " IterCount
+       ADD 1 TO IterCount
+    END-PERFORM
+    DISPLAY "Finished in line Perform."
+
+    INITIALIZE Itercount
+
+    DISPLAY "Enter a stream of up to 99 numbers."
+    DISPLAY "Each number must be in the range 1-99.  Enter 0 to stop."
+    DISPLAY "Enter number :- " WITH NO ADVANCING
+    ACCEPT UserInput
+    PERFORM GetUserInput UNTIL EndOfUserInput OR MaxCountReached
+
+    DISPLAY "The final total is - " RunningTotal
+    DISPLAY "The final count is - " IterCount
+    COMPUTE AverageValue = RunningTotal / IterCount
+    DISPLAY "The average value entered is - " AverageValue
+    STOP RUN.
+
+
+GetUserInput.
+    ADD UserInput TO RunningTotal
+        ON SIZE ERROR DISPLAY "Error - new total too large for data-item."
+        NOT ON SIZE ERROR ADD 1 TO IterCount END-ADD
+    END-ADD
+    DISPLAY "Total so far is - " RunningTotal
+    DISPLAY "Count so far is - " IterCount
+    DISPLAY "Enter number :- " WITH NO ADVANCING
+    ACCEPT UserInput.
+
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 IterCount           PIC 99  VALUE ZEROS.
+   88 MaxCountReached  VALUE 99.
+01 UserInput           PIC 99  VALUE ZEROS.
+   88 EndOfUserInput   VALUE ZEROS.
+01 RunningTotal        PIC 999 VALUE ZEROS.
+01 AverageValue        PIC 99  VALUES ZEROS.
+
+PROCEDURE DIVISION.
+Begin.
+    PERFORM UNTIL IterCount = 5     * or PERFORM 5 TIMES or PERFORM LoopBody WITH TEST BEFORE VARYING LoopCount FROM 1 BY 1 UNTIL LoopCount GREATER THAN 4
+       DISPLAY "IterCount = " IterCount
+       ADD 1 TO IterCount
+    END-PERFORM
+    DISPLAY "Finished in line Perform."
+
+    INITIALIZE Itercount
+
+    DISPLAY "Enter a stream of up to 99 numbers."
+    DISPLAY "Each number must be in the range 1-99.  Enter 0 to stop."
+    DISPLAY "Enter number :- " WITH NO ADVANCING
+    ACCEPT UserInput
+    PERFORM GetUserInput UNTIL EndOfUserInput OR MaxCountReached
+
+    DISPLAY "The final total is - " RunningTotal
+    DISPLAY "The final count is - " IterCount
+    COMPUTE AverageValue = RunningTotal / IterCount
+    DISPLAY "The average value entered is - " AverageValue
+    STOP RUN.
+
+
+GetUserInput.
+    ADD UserInput TO RunningTotal
+        ON SIZE ERROR DISPLAY "Error - new total too large for data-item."
+        NOT ON SIZE ERROR ADD 1 TO IterCount END-ADD
+    END-ADD
+    DISPLAY "Total so far is - " RunningTotal
+    DISPLAY "Count so far is - " IterCount
+    DISPLAY "Enter number :- " WITH NO ADVANCING
+    ACCEPT UserInput.
+
+
+
+
+ENVIRONMENT SECTION.
+INPUT-OUTPUT SECTION.
+FILE-CONTROL.
+    SELECT StudentFile ASSIGN TO "STUDENTS.DAT"
+		ORGANIZATION IS LINE SEQUENTIAL.
+
+DATA DIVISION.
+FILE SECTION.
+FD StudentFile.
+01 StudentDetails.
+   02  StudentId       PIC 9(7).
+   02  StudentName.
+       03 Surname      PIC X(8).
+       03 Initials     PIC XX.
+   02  DateOfBirth.
+       03 YOBirth      PIC 9(4).
+       03 MOBirth      PIC 9(2).
+       03 DOBirth      PIC 9(2).
+   02  CourseCode      PIC X(4).
+   02  Gender          PIC X.
+
+PROCEDURE DIVISION.
+Begin.
+    OPEN OUTPUT StudentFile
+    DISPLAY "Enter student details using template below.  Enter no data to end."
+
+    PERFORM GetStudentDetails
+    PERFORM UNTIL StudentDetails = SPACES
+       WRITE StudentDetails
+       PERFORM GetStudentDetails
+    END-PERFORM
+    CLOSE StudentFile
+    STOP RUN.
+
+GetStudentDetails.
+    DISPLAY "Enter - StudId, Surname, Initials, YOB, MOB, DOB, Course, Gender"
+    DISPLAY "NNNNNNNSSSSSSSSIIYYYYMMDDCCCCG"
+    ACCEPT  StudentDetails.

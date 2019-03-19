@@ -1,0 +1,66 @@
+' Project:          Big Bear Cabins
+' Author:           Max Voisard
+' Date:             November 21, 2016
+' Purpose:          The following web application will request reservation information
+'                   for the Big Bear Cabins. This website will compute 
+'                   the cost of the number of nights and cabin(s) selected.
+
+Option Strict On
+Partial Class About
+    Inherits Page
+
+    Protected Sub btnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
+        ' The btnSubmit Click Event will calculate the cost os the cabin
+        ' based on the type of cabin selected and the number of nights reserved.
+
+        ' Declare and initialize variables
+        Dim decGrizzlyCost As Decimal = 99D
+        Dim decPolarCost As Decimal = 89D
+        Dim decKodiakCost As Decimal = 79D
+        Dim strName As String
+        Dim strEmail As String
+        Dim decCabinCost As Decimal = 0D
+        Dim intNumberOfNights As Integer
+        Dim strMessage As String
+
+        'Trim additional spaces that are enterd by the user
+        strName = txtName.Text.Trim
+        strEmail = txtEmail.Text.Trim
+        lblReservation.Text = ""
+        If Not (chkGrizzly.Checked Or chkPolar.Checked Or chkKodiak.Checked) Then
+            lblCabinError.Visible = True
+            If cldArrival.SelectedDate < cldArrival.TodaysDate Then
+                lblCalendarError.Visible = True
+            Else
+                lblCalendarError.Visible = False
+            End If
+        Else
+            lblCabinError.Visible = False
+            If cldArrival.SelectedDate >= cldArrival.TodaysDate Then
+                lblCalendarError.Visible = False
+                ' Calculate the cost of the cabin(s) selected by the user
+                If chkGrizzly.Checked Then
+                    decCabinCost += decGrizzlyCost
+                End If
+                If chkPolar.Checked Then
+                    decCabinCost += decPolarCost
+                End If
+                If chkKodiak.Checked Then
+                    decCabinCost += decKodiakCost
+                End If
+                intNumberOfNights = Convert.ToInt32(ddlNights.SelectedItem.Text)
+                decCabinCost = intNumberOfNights * decCabinCost
+                strMessage = "A reservation has been made for: " & "<br>" _
+                    & strName & "<br>" & "Email: " & strEmail & "<br>"
+                strMessage &= "The cabin(s) cost is: " _
+                    & decCabinCost.ToString("C") & "<br>"
+                strMessage &= "Arrival Date: " _
+                    & cldArrival.SelectedDate.ToShortDateString() _
+                    & "<br>" & " for " & intNumberOfNights & " night(s)"
+                lblReservation.Text = strMessage
+            Else
+                lblCalendarError.Visible = True
+            End If
+        End If
+    End Sub
+End Class

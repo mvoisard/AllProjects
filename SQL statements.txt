@@ -1,0 +1,855 @@
+SELECT tableName WHERE condition GIVING newTableName
+SELECT Student WHERE stuId = 'S1013' GIVING Result
+SELECT Student WHERE major = 'Math' AND credits > 30
+SELECT lastName, firstName FROM Student WHERE major = 'Math' and credits > 30
+
+PROJECT tableName OVER (colName, ..., colName) GIVING newTableName
+PROJECT Student OVER major GIVING Temp   // Temp table consisting of major column
+PROJECT Class OVER (facId, room)         // Shows the facId and room columns
+
+Student TIMES Enroll GIVING Temp  // Simply combines the Student and Enroll tables into one Temp table
+SELECT Temp WHERE credits > 50
+
+Student EQUIJOIN Enroll  // Combines tuples/rows of the two tables based on what matches in common columns
+// Is equivalent to...
+Student TIMES Enroll GIVING Temp3
+SELECT Temp3 WHERE Student.stuId = Enroll.stuId
+
+Student LEFT SEMIJOIN Enroll // Shows the rows of the left table (Student) that have matches with the right table (Enroll). A RIGHT SEMIJOIN is the opposite.
+
+MainFac UNION BranchFac  // Combines the rows of both tables, ignoring duplicates
+MainFac INTERSECTS BranchFac  // Shows the common/duplicate rows between the two tables
+MainFac MINUS BranchFac  // Shows rows in MainFac that are not in BranchFac
+
+CREATE DATABASE University;
+USE University;			// Creating database and using USE command for db access in new session
+
+CREATE SCHEMA schema_name AUTHORIZATION user_name;  // Allowing user access to schema
+
+CREATE TABLE [schema-name.] base-table-name (colname datatype [column constraints]
+...
+[table constraints]
+[PARTITION BY...]
+[storage specifications]);
+
+############################# PROGRAM #1 - DDL for University ################################
+
+CREATE TABLE Student (
+stuId		VARCHAR2(6)   PRIMARY KEY,
+lastName	VARCHAR2(20)  NOT NULL,
+firstName	VARCHAR2(20)  NOT NULL,
+major		VARCHAR(10),
+credits		NUMBER(3) DEFAULT 0,
+CONSTRAINT Student_credits_cc CHECK ((credits>=0) AND (credits < 150)));
+
+CREATE TABLE Faculty (
+facId		VARCHAR2(6),
+name		VARCHAR2(20)  NOT NULL,
+department	VARCHAR2(20),
+rank		VARCHAR(10),
+CONSTRAINT Faculty_facId_pk PRIMARY KEY (facId));
+
+CREATE TABLE Class (
+classNumber	VARCHAR2(8),
+facId		VARCHAR2(6) REFERENCES Faculty (facId) ON DELETE SET NULL,
+schedule	VARCHAR2(8),
+room		VARCHAR2(6),
+CONSTRAINT Class_classNumber_pk PRIMARY KEY (classNumber),
+CONSTRAINT Class_schedule_room_uk UNIQUE (schedule, room));
+
+CREATE TABLE Enroll (
+stuId		VARCHAR2(6),
+classNumber	VARCHAR2(8),
+grade		VARCHAR2(2),
+CONSTRAINT Enroll_classNumber_stuId_pk PRIMARY KEY (classNumber, stuId),
+CONSTRAINT Enroll_classNumber_fk FOREIGN KEY (classNumber) REFERENCES Class (classNumber) ON DELETE CASCADE,
+CONSTRAINT Enroll_stuId_fk FOREIGN KEY (stuId) REFERENCES Student(stuId) ON DELETE CASCADE);
+
+INSERT INTO STUDENT VALUES('S1001', 'Smith', 'Tom', 'History', 90);
+INSERT INTO STUDENT VALUES('S1002', 'Chin', 'Ann', 'Math', 36);
+
+INSERT INTO FACULTY VALUES('F101', 'Adams', 'Art', 'Professor');
+INSERT INTO FACULTY VALUES('F105', 'Tanaka', 'Math', 'Assistant');
+
+INSERT INTO CLASS VALUES('ART103A', 'F101', 'MWF9', 'H221');
+INSERT INTO CLASS VALUES('CSC201A', 'F105', 'TuThF10', 'M110');
+
+INSERT INTO ENROLL VALUES('S1001', 'ART103A', 'A');
+INSERT INTO ENROLL(stuId, classNumber) VALUES('S1010', 'MTH103C');
+
+#############################################################################################
+
+// Besides VARCHAR2(n), other data types include CHAR(n), NUMBER, FLOAT(p) with p for precision in digits, DATE, and for Microsoft Access: TEXT, MEMO, DATE/TIME, HYPERLINK, and YES/NO
+// UNIQUE constraint after column name prevents duplicate records, so they must be unique. For example, "CONSTRAINT Class_schedule_room_uk UNIQUE (schedule, room)" ensures no classes have the exact same schedule and room
+// CHECK constraint checks if rows don't violate specified value rules
+
+major VARCHAR2(10) DEFAULT ON NULL 'Arts' NOT NULL,  // Makes any student row entered without a major an Arts major
+
+credits NUMBER(3)DEFAULT 0 CONSTRAINT Student_credits_cc CHECK ((credits>=0) AND (credits < 150))  // Default value of 0, making sure between that and 150
+
+CONSTRAINT Enroll_stuId_fk FOREIGN KEY (stuId) REFERENCES Student(stuId)  // Makes the Student table's primary key of stuId for Enroll table's foreign key. The "ON DELETE CASCADE" part that deletes all Class records upon the deletion of a faculty member; is a foreign key specification
+CONSTRAINT Enroll_classNumber_fk FOREIGN KEY (classNumber) REFERENCES Class
+
+CREATE [UNIQUE] INDEX indexname ON basetablename (colname[order][,colname[order]]...) [CLUSTER];
+CREATE INDEX Stu_lastName_ix ON Student (lastName);  // Since the "lastName" column is indexed, if we wanted a query asking for students with last name Smith, the system wouldn't need to scan all Student records because of the index
+CREATE INDEX Fac_dept_name_ix ON Faculty (department ASC, name DESC);  // Creates "Fac_dept_name_ix" index file, with entries in ascending alphabetical order by department and descending alphabetical order by faculty name
+
+ALTER TABLE basetablename ADD columnname datatype constraints;
+ALTER TABLE Class ADD cTitle VARCHAR2(30);  // Simply adds a cTitle column (so, it alters the table)
+ALTER TABLE bastablename DROP COLUMN columnname;  // I guess you must specify the COLUMN keyword to drop a column
+ALTER TABLE Class DROP COLUMN cTitle;
+ALTER TABLE basetablename MODIFY COLUMN colname [new specifications];  // The "new specifications" use the same wording for the column as after a CREATE TABLE command
+ALTER TABLE Class ADD CONSTRAINT Class_facId_fk FOREIGN KEY (facId) REFERENCES Faculty (facId) ON DELETE SET NULL;  // If we forgot to make facId a foreign key of class, you can do see here using ADD CONSTRAINT and REFERENCES
+RENAME old-table-name TO new-table-name;
+ALTER TABLE Student RENAME COLUMN stuId TO studentNo;
+
+DROP TABLE basetablename;  // Removes/deletes table
+DROP INDEX indexname;  // Removes/deletes index
+
+  SELECT [DISTINCT] col-name [AS newname], [,col-name..]...
+  FROM table-name [alias] [,table-name]...
+  [WHERE predicate]
+  [GROUP BY col-name [,col-name] ... [HAVING predicate]]
+or
+  [ORDER BY col-name [,col-name]...];
+  [ OFFSET offset { ROW | ROWS } ]
+  [ FETCH { FIRST | NEXT } [ { rowcount | percent PERCENT } ]
+  { ROW | ROWS } { ONLY | WITH TIES }];
+
+SELECT lastName, firstName, stuId, credits FROM Student WHERE major = 'Math';
+SELECT * FROM Faculty WHERE department = 'CSC';  // The asterisk (*) is for using all columns, so "SELECT * FROM Faculty" would show entire Faculty table
+SELECT DISTINCT classNumber FROM Enroll;  // DISTINCT eliminates duplicate values of the classNumber column
+SELECT name AS FacultyName, facId AS FacultyNumber FROM Faculty ORDER BY name;  // Makes name column turn into FacultyName column, etc. and orders the rows by alphabetical order of FacultyName
+SELECT stuId, grade FROM Class, Enroll WHERE facId = 'F110' AND Class.classNumber = Enroll.classNumber ORDER BY stuId ASC;
+SELECT name, facId FROM Faculty WHERE facId IN (SELECT facId FROM Class WHERE room = 'H221');
+SELECT lastName, firstName FROM Student WHERE EXISTS (SELECT * FROM Enroll WHERE Enroll.stuId = Student.stuId AND classNumber = 'CSC201A');  // EXISTS keyword is similar to in. This query can be phrased as "Find the names of all students such that there exists an enrollment record containing their student Id with a class number of CSC201A." Can also do NOT EXISTS
+SELECT facId FROM Faculty WHERE department = 'History' UNION SELECT facId FROM Class WHERE room = 'H221';   // Result is a table of two facId column's values, one that relates to "History" and another for "H221"
+SELECT COUNT (DISTINCT stuId) FROM Enroll WHERE classNumber = 'ART103A';  // Result is "3" - so COUNT says that there are 3 values in the stuId; we use DISTINCT so we do not count a same StuId more than once. SUM returns sum of values in column, AVG returns mean of values in column, MAX returns largest value, MIN returns lowest value.
+SELECT stuId, 'Number of classes =', credits/3 FROM Student;  // The string literal 'Number of classes' shows up after the StuId value and then the number of credits divided by 3 is displayed
+SELECT stuId, 'Number of classes =', credits/3 FROM Student ORDER BY credits/3 FETCH FIRST 50 PERCENT ROWS WITH TIES  // Shows top half of credits values, including ties
+SELECT stuId, 'Number of classes =', credits/3 FROM Student ORDER BY credits/3 OFFSET 3 ROWS FETCH NEXT 2 ROWS ONLY;  // Shows the fourth and fifth rows by highest values; doesn't show first records, neglects ties
+SELECT major, SUM(credits) FROM Student GROUP BY major;  // Has two columns, major and SUM(credits), with the credits grouped with their respective major
+SELECT classNumber, COUNT(*) FROM Enroll GROUP BY classNumber;  // The COUNT(*) shows you how many times a certain class number appears in records of the table
+SELECT classNumber FROM Enroll GROUP BY classNumber HAVING COUNT(*) < 3;  // HAVING is used in place of WHERE when using conditions on groups, rather than records
+SELECT * FROM Class WHERE classNumber LIKE 'MTH%';  // Shows records where classNumber has the first letters as "MTH". Other examples: LIKE 'S_ _ _ _ _' means there must be 5 characters, with the first being S. LIKE '%9' means the last character must be a 9. LIKE '%101%' means "101" must be somewhere, whether beginning, middle, or end. Can also do NOT LIKE for opposites.
+SELECT att_list FROM table name WHERE REGEXP_LIKE (attribute, regular expression);  // Standard form
+SELECT * FROM Faculty WHERE REGEXP_LIKE (name, '^Sm(i|ly)th$');
+SELECT classNumber, stuId FROM Enroll WHERE grade IS NULL;  // Finds class # and student ID of students with a grade missing
+SELECT firstName, lastName, TO_CHAR(birthDate, 'YYYY') AS YEAR FROM Employee WHERE empId = 1001;  // Returns FIRSTNAME, LASTNAME, and YEAR columns, with the one record in accordance with an empId of 1001
+
+UPDATE tablename SET columnname = expression [,columnname = expression] ... [WHERE predicate];
+UPDATE Student SET major = 'Music' credits = credits + 3 WHERE stuId = 'S1020';  // If there were no WHERE clause, all records would be updated
+UPDATE Class SET room = 'B220' WHERE facId = (SELECT facId FROM Faculty WHERE name = 'Tanaka');
+
+INSERT INTO Faculty (facId, name, department, rank) VALUES ('F330', 'Jones', 'CSC', 'Instructor');
+INSERT INTO Employee VALUES(1002, 'Hynes', 'William', '15-OCT-1985', TRUNC(SYSDATE));  // TRUNC sets SYSDATE, which is the date the record is entered, to 00:00
+INSERT INTO Employee (empId, firstName, lastName, hireDate) VALUES(1003, 'Scott', 'Kane', TO_DATE('01/01/2015', 'MM/DD/YYYY'));  // TO_DATE makes the hireDate attribute a date data type
+ALTER TABLE Employee MODIFY COLUMN hiredate TIMESTAMP;  // Turning hiredate attribute mentioned above that was a DATE type into a TIMESTAMP type - TIMESTAMP does date AND time to the fraction of a second. Can also use SYSTIMESTAMP.
+id NUMBER GENERATED AS IDENTITY,  // The default primary key "id" starts at 1 and is incremented by 1 because of IDENTITY. Query can stated in a CREATE TABLE command.
+id NUMBER GENERATED BY DEFAULT AS IDENTITY (START WITH 100 INCREMENT BY 10),  // IDENTITY value (id) is system-generated when user fails to provide value - values would be 100, 110, 120, etc.
+CREATE SEQUENCE empId_seq START WITH 2001 INCREMENT BY 1;  // A sequence generates values for an attribute - in this case, for empId
+INSERT INTO Employee2 VALUES (empId_seq.NEXTVAL, 'Manley', 'Michael', '10-OCT-1985', SYSDATE);
+CREATE TABLE Assign2 ( empId NUMBER(6) not null REFERENCES Employee2(empId), projNo NUMBER(6) not null, hoursAssigned NUMBER(3), PRIMARY KEY(empId, projNo));  // empId is foreign key from Employee2 table, being assigned as primary key to each Assign2 record
+INSERT INTO Assign2(empId, projNo, hoursAssigned) VALUES (empId_seq.CURRVAL, 1001, 30);  // CURRVAL is a pseudocolumn like NEXTVAL. CURRVAL enters the empId from the most recent (CURRent) Employee entered in a related Assign record.
+DELETE SEQUENCE empId_seq  // Self-explanatory
+
+DELETE FROM basetablename WHERE predicate;
+DELETE FROM Student WHERE stuId = 'S1020';
+DELETE FROM Class; // Deletes all records from Class
+
+CREATE VIEW viewname [(viewcolname [,viewcolname] ...)] AS
+SELECT colname [,colname] ...
+FROM basetablename [,basetablename] ...
+WHERE condition;
+
+CREATE VIEW Histmaj (last, first, stuId) AS SELECT lastName, firstName, stuId FROM Student WHERE major = 'History';  // We can create a vertical and horizontal subset of a table (view) by showing the user the IDs and names of all history majors
+CREATE VIEW ClassLoc AS SELECT classNumber, schedule, room FROM Class;  // Keep in mind, since this query does not include the primary key of stuId (or whatever it was) from Class, new records cannot be inserted into the view, like through "INSERT INTO ClassLoc VALUES('CSC101', 'MWF3', '443');". If a primary key was in, the view would be updatable.
+CREATE VIEW ClassList AS SELECT Student.stuId, lastName, firstName FROM Enroll, Student WHERE classNumber = 'CSC101' AND Enroll.stuId = Student.stuId;  // Creating view from two tables
+CREATE VIEW ClassLoc2 AS SELECT classNumber, room FROM ClassLoc;  // A view of a view (ClassLoc2 from ClassLoc)
+CREATE VIEW ClassCount (classNumber, TotCount) AS SELECT classNumber, COUNT(*) FROM Enroll GROUP BY classNumber;  // A view using a function. Creates view of Enroll that gives classNumber and # of students enrolled in each class (COUNT(*) and TotCount).
+SELECT * FROM ClassLoc WHERE room LIKE 'H%';  // SELECT operation on a view
+CREATE OR REPLACE VIEW StudentV2 AS (SELECT stuId, firstName, lastName FROM Student);  // The "CREATE OR REPLACE viewname AS subquery" command modifies the view, in the case dropping the "credits" column by simply not listing it.
+
+CREATE TABLE Department (
+chairperson VARCHAR2(6),
+CONSTRAINT Department_facId_fk FOREIGN KEY (chairPerson) REFERENCES Faculty (facId));  // Creating constraint within Department table
+
+ALTER TABLE Department DISABLE CONSTRAINT Department_facId_fk;  // Disabling constraint
+ALTER TABLE Department ENABLE CONSTRAINT Department_facId_fk;  // Enabling constraint
+
+BEGIN TRANSACTION
+SET CONSTRAINT Department_facId_fk DEFERRED;
+...
+END TRANSACTION  // If we are using an application to enter data, this defers constraint checking until the end of the transactions
+
+CREATE OR REPLACE TRIGGER trigger_name
+[BEFORE/AFTER] [INSERT/UPDATE/DELETE] ON table_name
+[FOR EACH ROW] [WHEN condition]
+[DECLARE local_variable_name datatype [:= initial_value]]
+BEGIN
+    trigger body
+END;                  // Triggers are like constraints by monitoring the database except they are more flexible. Each trigger has three parts: an event (change to database), condition (logical predicate, true or false), and action (happens when event occurs and condition is true, aka "firing the trigger")
+
+*********************** Trigger for Student Enrolling in a Class *********************************
+// This trigger is for adding one more student to the table CurrentEnroll and also to similar tables RevClass and RevEnroll, thereby doing a change
+create or replace trigger ADDENROLL
+after insert on revenroll for each new row
+begin
+     update revclass
+     set currentenroll=currentenroll+1		     // Adding a record from table CurrentEnroll
+     where revclass.classnumber=:new.classnumber;    // :NEW prefix is used for an additional/new record
+exception
+     when no_data_found then
+	      DBMS_OUTPUT.PUT_LINE('No data found');
+     when others then
+	      DBMS_OUTPUT.PUT_LINE('Error-'|| SQLERRM);
+end;
+/
+**************************************************************************************************
+
+*********************** Trigger for Student Dropping Classes *************************************
+create or replace trigger DROPENROLL
+after insert on revenroll 
+for each new row
+begin
+     update revclass
+     set currentenroll=currentenroll-1		     // Subtracting a record from table CurrentEnroll
+     where revclass.classnumber=:old.classnumber;    // :OLD prefix is used for taking away an old record
+exception
+     when no_data_found then
+	      DBMS_OUTPUT.PUT_LINE('No data found');
+     when others then
+	      DBMS_OUTPUT.PUT_LINE('Error-'|| SQLERRM);
+end;
+/
+**************************************************************************************************
+
+******** Trigger for updating Student table INSTEAD OF (get it?) StudentVw2 table through view *********
+CREATE TRIGGER InsertStuVw2
+     INSTEAD OF INSERT ON StudentVw2
+     FOR EACH ROW
+BEGIN
+     INSERT
+     INTO Student(stuId, lastName, firstName, credits)
+     VALUES (:NEW.stuId,:NEW.lastName,:NEW.firstName,:NEW.credits);
+END;
+********************************************************************************************************
+
+******************************* Trigger to Check for Overenrollment ******************************
+create or replace trigger ENROLL_REQUEST
+before insert or update of classNumber on revenroll
+for each row
+declare
+     numStu number;
+     maxStu number;
+begin
+     select maxEnroll into maxStu from RevClass
+     where RevClass.classNumber =:NEW.classNumber;
+     select currentEnroll +1 into numStu from RevClass
+     where RevClass.classNumber =:NEW.classNumber;
+     if numStu > maxStu THEN
+DBMS_OUTPUT.PUT_LINE('Student ' || :NEW.stuId ||' has requested ' ||:NEW.classNumber ||'
+which currently has ' ||TO_CHAR(numstu)||' students and has a maximum enrollment of ' ||TO_CHAR(maxStu));
+     end if;
+exception
+     when no_data_found then
+	     DBMS_OUTPUT.PUT_LINE('No data found');
+     when others then
+	     DBMS_OUTPUT.PUT_LINE('Error-' || SQLERRM);
+end;
+/
+**************************************************************************************************
+
+ALTER TRIGGER trigger-name DISABLE;  // Disables trigger
+ALTER TRIGGER trigger-name ENABLE;   // Enables trigger
+DROP TRIGGER trigger-name;  // Drops trigger
+
+************************** Example of temporal (or time-based) database **************************
+drop table TempEnroll;
+
+CREATE TABLE TempEnroll(
+stuId        VARCHAR2(6),
+classNumber  VARCHAR2(8),
+grade	     VARCHAR2(2),
+start_time   TIMESTAMP,
+end_time     TIMESTAMP,
+CONSTRAINT TempEnroll_clNum_stuId_pk PRIMARY KEY (classNumber, stuId),
+PERIOD FOR user_valid_time (start_time, end_time));
+**************************************************************************************************
+
+************************** INSERT Statements to Add TempEnroll Records ***************************
+INSERT INTO TempEnroll VALUES('S1001', 'ART103A', 'A', TO_TIMESTAMP('01-SEP-2013', 'dd-mm-yy'),
+	TO_TIMESTAMP('15-JAN-2014','dd-mon-yy'));
+INSERT INTO TempEnroll VALUES('S1001', 'HST205A', 'A', TO_TIMESTAMP('05-SEP-2013', 'dd-mm-yy'),
+	TO_TIMESTAMP('15-JAN-2014','dd-mon-yy'));
+INSERT INTO TempEnroll VALUES('S1001', 'ART103A', 'A', TO_TIMESTAMP('01-SEP-2013', 'dd-mm-yy'),
+	TO_TIMESTAMP('15-JAN-2014','dd-mon-yy'));
+
+// The following should retrieve all three records:
+SELECT stuId, classNumber, TO_CHAR(start_time), TO_CHAR(end_time) FROM TempEnroll
+WHERE(TO_TIMESTAMP('10-NOV-2013', 'dd-mon-yy')) BETWEEN start_time and end_time;
+
+// The following should retrieve only the first and third records:
+SELECT stuId, classNumber, TO_CHAR(start_time), TO_CHAR(end_time) FROM TempEnroll
+WHERE(TO_TIMESTAMP('02-SEP-2013', 'dd-mon-yy')) BETWEEN start_time and end_time;
+
+UPDATE TempEnroll SET end_time=TO_TIMESTAMP('01-NOV-2013','dd-mon-yy')
+WHERE stuId='S1010' and classNumber='ART103A';
+
+// The following should retrieve only the first and second records:
+SELECT stuId, classNumber FROM TempEnroll WHERE(TO_TIMESTAMP('10-NOV-2013', 'dd-mon-yy')) 
+BETWEEN start_time and end_time;
+
+// The following should retrieve all three records:
+SELECT stuId, classNumber from TempEnroll VERSIONS PERIOD FOR user_valid_time
+BETWEEN (TO_TIMESTAMP ('01-SEP-13')) AND (TO_TIMESTAMP ('10-NOV-13'));
+*************************************************************************************************
+
+// A COMMIT or ROLLBACK statement ends, or delimits, a transaction
+SELECT stuId, classNumber FROM TempEnroll AS OF PERIOD FOR user_valid_time (SYSTIMESTAMP);  // Specifying records at the time of the query
+ALTER TABLE Assign ADD PERIOD FOR user_valid_time;  // Adds invisible temporal columns, going from USER_VALID_TIME_START to USER_VALID_TIME_END
+INSERT INTO Assign(projNo, empId, hoursAssigned, user_valid_time_start, user_valid_time_end) VALUES(1030, 110, 35, NULL, TO_TIMESTAMP('01-Jan-2016'),NULL);  // Adding values to hidden columns
+SELECT * FROM Worker AS OF TIMESTAMP TO_TIMESTAMP('2014-06-12 09:00:00', 'YYYY-MM-DD HH:MI:SS') WHERE empId=103;  //  Retrieves data as it appeared at a specific date and time
+
+VERSIONS BETWEEN { SCN | TIMESTAMP } start AND end
+
+or...
+
+VERSIONS PERIOD FOR user_valid_time [ BETWEEN TIMESTAMP start AND end ]  // Both are for time intervals
+
+SELECT * FROM Assign VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP('01-Jan-2014') AND TO_TIMESTAMP('31-Dec-2016') WHERE empId=103;  // Returns the Assign records for employee 103 over a three-year period
+SELECT * FROM Assign VERSIONS BETWEEN SCN MINVALUE AND MAXVALUE WHERE empId=103;  // Gets a history of all changes to a tuple by using the system change number (SCN), from lowest to highest value
+
+CREATE TYPE arraytypename AS VARRAY(size) OF basetype;  // Standard form
+CREATE TYPE MajorsType AS VARRAY(2) OF VARCHAR2(20);  // And then you could have something like "CREATE TABLE Stu ( stuId VARCHAR2(6), majors MajorsType )"
+
+************************* Using PL/SQL to Access Cells of a VARRAY  ******************************
+set serveroutput on;
+create or replace procedure printarray as
+id varchar2(6);
+frame varchar2(20);
+lname varchar2(20);
+mymajors MajorsType;
+cursor majcursor is
+       SELECT s.stuId, s.firstName, s.lastName, s.majors
+       FROM Stu s;
+begin
+       open majcursor;
+dbms_output.put_line('Id '||'     First Name '||'      Last Name '||'       Majoring in');
+dbms_output.put_line(------------------------------------------------------------------');
+loop
+	fetch majcursor into id, fname, lname, mymajors;
+        exit when majcursor%notfound;
+	dbms_output.put(id||'       '||fname||'    '||lname);
+	for i in 1..2 loop
+	       if (mymajors(i) is not null)
+		     then dbms_output.put('     '|| mymajors(i));
+	       end if;
+	end loop;
+	dbms_output.put_line(' ');
+end loop;
+close majcursor;
+end;
+**************************************************************************************************
+
+********************* Simplified Definition of a Class Hierarchy (page 302) **********************
+class Person {
+     attribute int ID;
+     attribute string name;
+     attribute struct addr(string street, string city, string state, string zip) address;
+     attribute string phone;
+     string getName( );  // Method that returns a string
+     void setName(in string newName);  // Method with no return
+     . . .
+};
+class Student extends Person {
+     attribute int credits;
+     attribute real(4, 2) GPA;
+     int getCredits( );
+     void addCredits(in int numCredits);
+     . . .
+};
+class Faculty extends Person {
+     attribute string dept;
+     attribute enum FacultyRank(instructor, assistant, associate, professor) rank;
+     string getRank( );
+     . . .
+};
+class Undergraduate extends Student {
+     attribute string major;
+     string getMajor( );
+     void setMajor(in string newMajor);
+     . . .
+};
+class Graduate extends Student {
+     attribute string program;
+     string getProgram( );
+     . . .
+};
+**************************************************************************************************
+
+********************* ODL Definition for the University Schema (page 309) ************************
+// ODL = Object Definition Language. extent keyword = used for declaring objects of class
+class Person (
+extent People
+key pId)
+{
+/* define attributes */
+      attribute int pId;
+      attribute string name;
+      attribute Struct Addr(string street, string city, string state, string zip) address;
+      attribute string phone;
+      attribute date birthDate;
+/* define methods */
+      int findAge();
+};
+class Student extends Person (extent Students)
+{
+/* define attributes */
+      attribute int credits;
+      attribute real(3,2) gpa;
+/* define relationships */
+      relationship Set<ClassSection> takesClass Inverse ClassSection::hasStudent;  // The word "Set" means it is a many relationship for each student (so, 1 student to a set of ClassSection instances). Says that each Student instance can contain a set of references, called takesClass, to ClassSection instances. The Inverse className:relationshipName statement is basically doing the opposite of before. Before, given a Student instance, we could find out which classes the student is taking. Now, given a ClassSection instance, we can find out which students are in a class. This line would mean the same thing: "relationship Set<Student> hasStudent Inverse Student::takesClass;"
+      relationship Set<Mark> earnedGrade Inverse Mark::givenStudent;
+      relationship Faculty hasAdvisor Inverse Faculty::advises;
+/* define methods */
+      string getStatus();
+      void addCredits(in int numCredits);  // "in" keyword is a mode that says it is input; "out" would mean output and "in out" would mean both
+};
+class Faculty extends Person (extent Fac)
+{
+/* define attributes */
+       attribute enum FacultyRank(lecturer, instructor, assistant, associate, professor) rank;
+       attribute real(8,2) salary;
+/* define relationships */
+       relationship Department belongsTo Inverse Department::hasFaculty;
+       relationship Set<ClassSection> teaches Inverse ClassSection::hasTeacher;
+       relationship Set<Student> advises Inverse Student::hasAdvisor;
+       relationship Department chairs Inverse Department::hasChair;
+       relationship Set<Evaluation> hasEvaluation Inverse Evaluation::isEvalOf;
+/* define methods */
+       void giveRaise(in float amount) raises (Salary out of range);
+};
+class Undergraduate extends Student (extent Undergrads)
+{
+/* define attributes */
+       attribute string major;
+/* define methods */
+       void changeMajor(in string newMajor) raises (Invalid major);
+};
+class Graduate extends Student (extent Grads)
+{
+/* define attributes */
+       attribute string program;
+/* define methods */
+       string changeProgram(in string newProgram) raises (Invalid program);
+};
+class TeachingAssistant extends Graduate (extent TAs)
+{
+/* define attributes */
+       attribute string fundingSource;
+/* define relationships */
+       relationship ClassSection assists Inverse ClassSecton::hasTA;
+};
+class Department (extent Departments) key deptCode, deptName)
+{
+/* define attributes */
+       attribute string deptCode;
+       attribute string deptName;
+       attribute string deptOffice;
+       attribute string phone;
+/* define relationships */
+       relationship Set<Faculty> hasFaculty Inverse Faculty::belongsTo;
+       relationship Faculty hasChair Inverse Faculty::chairs;
+       relationship Set<Course> offers Inverse Course::isOffering;
+};
+
+class Course (extent Courses) key cNo)
+{
+/* define attributes */
+       attribute string cNo;
+       attribute string cTitle;
+       attribute int credits;
+       attribute string description;
+/* define relationships */
+       relationship Set<Course> hasPrerequisite Inverse isPrereqOf;
+       relationship Set<Course> is PrereqOf Inverse hasPrerequisite;
+       relationship Department isOffering Inverse Department::offers;
+};
+class ClassSection extends Course (extent Sections)
+{
+/* define attributes */
+       attribute string sectionCode;
+       attribute string schedule;
+       attribute string room;
+/* define relationships */
+       relationship Set<Student> hasStudent Inverse Student::takesClass;
+       relationship Faculty hasTeacher Inverse Faculty::teaches;
+       relationship TeachingAssistant hasTA Inverse TeachingAssistant::assists;
+       relationship Set<Mark> givenIn Inverse Mark::givenTo;
+};
+class Evaluation (extent Evaluations) key (evalDate, isEvalOf)
+{
+/* define attributes */
+       attribute date evalDate;
+       attribute string raterName;
+       attribute int rating;
+/* define relationships */
+       relationship Faculty isEvalOf Inverse Faculty::hasEvaluation;
+};
+class Mark (extent Grades)
+{
+/* define attributes */
+       attribute string grade;
+/* define relationships */
+       relationship ClassSection givenTo Inverse ClassSection::givenIn;
+       relationship Student givenStudent Inverse Student::earnedGrade;
+**************************************************************************************************
+
+class Faculty (extent Fac key facId, socSecNo, (name, department))  // There are three keys: facId, socSecNo, and the combination of name and department. Keys are needed, however, as the system tells instances apart through object identifiers (OID).
+
+// All of the following statements below are OQL (Object Query Language), which uses objects instead of tables as in SQL. It uses dot notation in the form of object.attribute. The dot notation invokes the default get() method for the attributes.
+SELECT s.pId, s.credits FROM Students s ORDER BY s.pID  // The results would be the values of pId and credits for each Student instance. s is the iterator variable.
+SELECT p.name, p.findAge( ) FROM People p WHERE p.pId = 1001;  // Uses method findAge( )
+SELECT s.pId, s.name, s.major FROM Undergrads AS s WHERE s.credits >=60 AND s.credits <=90 ORDER BY s.name;  // Instead of "FROM table variable", can say "FROM table AS variable" or "FROM variable IN table"
+SELECT f.name FROM Departments AS d, d.hasFaculty AS f WHERE d.deptName = 'Biology';
+SELECT f.name FROM (SELECT d FROM d IN Departments WHERE d.deptName = 'Biology') AS b, b.hasFaculty AS f;  // Is same as last query, except this one also uses a subquery to assign the value to an iterator variable (b) to find the names of all faculty in the Biology department
+SELECT STRUCT(name: f.name, rank: f.rank, salary: f.salary) FROM Fac AS f WHERE f.belongsTo = 'English' ORDER BY salary DESC;  // Puts name, rank, and salary of all faculty in the English department in a structure
+AVG (SELECT f.salary FROM Fac AS f WHERE f.belongsTo = 'History');  // Shows average salary of faculty members in the History department
+COUNT ((SELECT u FROM Undergrads AS u WHERE u.majorsIn = 'Computer Science');  // Find the number of undergraduates majoring in computer science
+SELECT s.cNo, s.section FROM Sections AS s WHERE COUNT (s.hasStudents > 30);  // Finds the course number and section of all the class sections that have more than 30 students in them
+(SELECT u.pID, u.name FROM Undergrads AS u WHERE u.major = 'Computer Science') UNION (SELECT g.pID, g.name FROM Grads AS g WHERE g.program = 'Computer Science');  // Finds the IDs and names of all students whose undergraduate major or graduate program is computer science
+DEFINE Juniors AS Select s FROM s IN Undergrads WHERE s.credits >= 60 AND s.credits < 90;  // Creates a defined query, also known as a view, that defines juniors
+SELECT j.pId, j.name FROM j IN Juniors;  // Gets ID and name of all juniors from the defined query "Juniors"
+
+// This an OO database developed in Cachè, making University schema
+**************************************************************************************************
+Class University.Address Extends (%SerialObject) {
+Property Street As %String (MAXLEN = 80);
+Property City As %String (MAXLEN = 80);
+Property State As %String (MAXLEN = 2);
+Property Zip As %String (MAXLEN = 5);
+}
+Class University.Person Extends (%Persistent) {
+Property pId As %Integer [ Required ];
+Index pIdIndex On pId [ Unique ];
+Property lName As %String [ Required ];
+Property fName As %String [ Required ];
+Property addr As Address;
+Property phone As %String;
+Property birthDate As %Date;
+Method findAge() As %Integer {}
+}
+Class University.Faculty Extends Person {
+Property rank As %String (VALUELIST = "'Instructor', 'Assistant', 'Associate', 'Professor'");
+Property salary As %Numeric;
+Relationship advises As University.Student [ Cardinality = many, Inverse = hasAdvisor ];
+Relationship belongsTo As University.Department [ Cardinality = one, Inverse = hasFaculty ];
+Relationship chairs As University.Department [ Cardinality = one, Inverse = hasChair ];
+Relationship teaches As University.ClassSection [ Cardinality = many, Inverse = hasTeacher ];
+Relationship hasEvaluation As University.Evaluation [ Cardinality = children, Inverse = isEvalOf ];
+Method giveRaise() As %Numeric{}
+}
+Class University.Student Extends University.Person {
+Property credits As %SmallInt [ InitialExpression = 0 ];
+Property gpa As %Numeric(MAXVAL = 4.0, MINVAL = 0.0);
+Relationship hasAdvisor As University.Department [ Cardinality = one, Inverse = advises ];
+Relationship takesClass As University.Enrollment [ Cardinality = many, Inverse = studentEnrolled ];
+Relationship earnedGrade As University.Department [ Cardinality = many, Inverse = givenStudent ];
+Method addCredits(numCredits As %SmallInt){}
+Method getStatus() As %String{}
+}
+Class University.Undergraduate Extends University.Student {
+Property major As %String;
+Method changeMajor(newMajor As %String){}
+}
+Class University.Graduate Extends University.Student {
+Property program As %String;
+Method changeProgram(newProgram As %String){}
+}
+Class University.TeachingAssistant Extends University.Graduate {
+Property fundingSource As %String;
+Property tuitionRemission As %Numeric;
+Relationship assists As University.ClassSection [ Cardinality = one, Inverse = hasTA ];
+}
+Class University.Department Extends (%Persistent) {
+Property deptCode As %String [ Required ];
+Property deptName As %String [ Required ];
+Index deptCodeNameIndex On (deptCode, deptName) [ Unique ];
+Property deptOffice As %String;
+Property deptPhone As %String;
+Relationship hasFaculty As University.Faculty [ Cardinality = many, Inverse = belongsTo ];
+Relationship hasChair As University.Faculty [ Cardinality = one, Inverse = chairs ];
+Relationship offers As University.Course [ Cardinality = many, Inverse = isOffering ];
+}
+Class University.Course Extends (%Persistent) {
+Property cNo As %String [ Required ];
+Index cNoIndex On cNo [ Unique ];
+Property cTitle As %String [ Required ];
+Property credits As %SmallInt;
+Property description As %String;
+Relationship isOffering As University.Department [ Cardinality = one, Inverse = offers ];
+Relationship hasSection As University.classSection [ Cardinality = children, Inverse = isSection of ];
+Relationship hasPreReq As University.Prereqs [ Cardinality = many, Inverse = isPreReqOf ];
+Relationship preReqOf As University.Prereqs [ Cardinality = many, Inverse = isPreReq ];
+}
+Class University.Prereqs Extends (%Persistent) {
+Relationship isPreReqOf As University.Course [ Cardinality = one, Inverse = hasPreReq ];
+Relationship isPreReq As University.Course [ Cardinality = one, Inverse = preReqOf ];
+}
+Class University.ClassSection Extends (%Persistent) {
+Property sectionCode As %String [ Required ];
+Property schedule As %String;
+Property room As %String;
+Relationship hasTeacher As University.Faculty [ Cardinality = one, Inverse = teaches ];
+Relationship hasStudent As University.Enrollment [ Cardinality = many, Inverse = classTaken ];
+Relationship isSectionOf As University.Course [ Cardinality = parent, Inverse = hasSection ];
+Relationship hasTA As University.TeachingAssistant [ Cardinality = one, Inverse = assists ];
+Relationship givenIn As University.Mark [ Cardinality = many, Inverse = givenTo ];
+}
+Class University.Enrollment Extends %Persistent {
+Relationship studentEnrolled As University.Student [ Cardinality = one, Inverse = takesClass ];
+Relationship classTaken As University.classSection [ Cardinality = one, Inverse = hasStudent ];
+}
+Class University.Evaluation Extends (%Persistent) {
+Property evalDate As %Date [ Required ];
+Property raterName As %String [ Required ];
+Property rating As %String(VALUELIST = "1,2,3,4,5");
+Relationship isEvalOf As University.Faculty [ Cardinality = parent, Inverse = hasEvaluation ];
+Index evalIndex On (evalDate, isEvalOf) [ Unique ];
+}
+Class University.Mark Extends (%Persistent) {
+Property grade As %String(VALUELIST = "'A', 'B', 'C', 'D', 'F', 'W', '1'");
+Relationship givenStudent As University.Student [ Cardinality = one, Inverse = earnedGrade ];
+Relationship givenTo As University.ClassSection [ Cardinality = one, Inverse = givenIn ];
+}
+**************************************************************************************************
+
+// The following now is PL/SQL, not OQL, but does take advantage of using object-based models
+
+*********************************** Object Type Definitions **************************************
+CREATE OR REPLACE TYPE StudentType1 AS OBJECT (
+stuId VARCHAR2(6),
+advisor REF StudentType1,  // This a reference/pointer (by default the OID, not the primary key), which in this case references the StudentType1 object. This can later have a statement like to this to dereference: "SELECT DEREF(s.advisor) FROM Students2 s WHERE stuid='S555';
+lastName VARCHAR2(20),
+// Etcetera, etcetera
+MEMBER FUNCTION findAge RETURN NUMBER,
+MEMBER PROCEDURE addCredits(numCredits IN NUMBER)
+)
+
+INSTANTIABLE  // Instantiable means that instances (and therefore have constructors) of this type can be created so there can be columns, tables, and other items to reference it. Could also do "NOT INSTANTIABLE".
+NOT FINAL;
+**************************************************************************************************
+
+************************* Oracle Code for Methods of StudentType1 Class **************************
+CREATE OR REPLACE TYPE BODY StudentType1 IS
+MEMBER FUNCTION findAge RETURN NUMBER IS  // A method is procedure or function that is part of the object type definition, and that can operate on the attributes of the type. Such methods are also called member methods, and they take the keyword MEMBER when you specify them as a component of the object type.
+age NUMBER;
+BEGIN
+	age := EXTRACT(year FROM (sysdate-dateofBirth) year TO month);  // The EXTRACT() function extracts a part from a given date. Syntax: EXTRACT(part FROM date)
+	RETURN(age);  // RETURN usually has an integer after it as an argument, like "RETURN(3)" from its syntax of "RETURN(int)", but could also just be left alone as "RETURN" or have a variable like "RETURN stuId"
+END;  -- of findAge
+MEMBER PROCEDURE addCredits(numCredits IN NUMBER) IS
+BEGIN
+	self.credits := self.credits + numCredits;
+END;  -- of addCredits
+END;
+/
+**************************************************************************************************
+
+****************************************** Map method ********************************************
+MAP MEMBER FUNCTION getStuId RETURN VARCHAR2  // A map method, or order method, directs Oracle to apply the comparison method for the entire type
+CREATE OR REPLACE TYPE BODY StudentType1 IS
+MEMBER FUNCTION getstuId RETURN VARCHAR2 IS
+BEGIN
+    RETURN stuId;
+END;
+**************************************************************************************************
+
+********* A comparison method we would we write with our own code instead of a map method ********
+ORDER MEMBER FUNCTION compareAge(s StudentType1) RETURN NUMBER;
+CREATE OR REPLACE TYPE BODY StudentType1 AS
+MEMBER FUNCTION compareAge(s StudentType) RETURN NUMBER IS
+BEGIN
+   IF (self.dateOfBirth < s.dateOfBirth) THEN RETURN 1;
+   ELSE IF (self.dateOfBirth > s.dateOfBirth) THEN RETURN -1;
+   ELSE RETURN 0;
+   END IF;
+   END IF;
+END;
+**************************************************************************************************
+
+SELECT VALUE(f) FROM Faculty2 f WHERE facid='F101';
+CREATE TABLE Students2 OF StudentType2;  // Creating a table "Students2" from the object "StudentType2"
+ALTER TABLE Students2 ADD (SCOPE FOR (advisor) IS Faculty2);  // ALTER TABLE must be used to specify the scope of the reference attribute, which in this case wouldn't be referring to any FacultyType2 row, but limited to the existing rows in the Faculty2 table
+
+CREATE TABLE MyFaculty OF FacultyType2(
+CONSTRAINT MyFaculty_facId_pk PRIMARY KEY)
+OBJECT IDENTIFIER PRIMARY KEY;  // These three lines made the primary key the OID
+CREATE TYPE UndergraduateType UNDER StudentType2 AS (major varchar2(15)) INSTANTIABLE, NOT FINAL;  // Creating subtype UndergraduateType from type StudentType2
+
+SELECT lastName, firstName, TREAT(VALUE(s) AS FreshmanType).peerMentor FROM Students2 s WHERE VALUE(s) IS OF (FreshmanType);  // Retrieves columns that appear only in a subtype, in this case freshmen from FreshmanType. The TREAT() funcction that allows us to treat each Students2 tuple as if it were a FreshmanType tuple in order to examine the peerMentor attribute.
+
+*************** Creating the Student3 Table Containing a Nested "ContactList" table **************
+CREATE TABLE Students3 OF StudentType3 (
+CONSTRAINT Stus3_stuId_pk PRIMARY KEY (stuId))
+OBJECT ID PRIMARY KEY
+NESTED TABLE contactList  // NESTED TABLE is an Oracle data type used to support columns containing multivalued attributes, in this case, columns that can hold an entire sub-table (a table within a table)
+STORE AS contactListStorageTable (  // NESTED TABLE...STORE AS is a common sequence
+(PRIMARY KEY (nested_table_id, lastName, firstName))
+ORGANIZATION index compress)  // In Oracle PL/SQL, the ORGANIZATION clause is used in the CREATE_TABLE command to specify the orientation of record storage. It can be HEAP, INDEX or EXTERNAL. Indirectly, these types refer to the type of the table. HEAP refers to no specific or defined ordering of records. INDEX refers to Index organized tables, where records are stored in an Index on the primary key column in the table. EXTERNAL specifies that table source is outside the server and treats the source as read only
+RETURN AS locator
+**************************************************************************************************
+
+******************* UML to Oracle OR Example - Received "University" Database ********************
+CREATE OR REPLACE TYPE AddressType AS OBJECT (
+street VARCHAR2(50),
+city VARCHAR2(15),
+state CHAR(2),
+zip VARCHAR2(10));
+CREATE OR REPLACE TYPE PhoneType AS OBJECT (
+areaCode CHAR(3),
+telephoneNumber CHAR(7));
+CREATE OR REPLACE TYPE NameType AS OBJECT (
+firstName VARCHAR2(15),
+lastName VARCHAR2(20));
+CREATE OR REPLACE TYPE PersonType AS OBJECT (
+pid NUMBER(5),
+name NameType,
+address AddressType,
+phone PhoneType,
+birthdate DATE,
+MEMBER PROCEDURE findAge)
+INSTANTIABLE
+NOT FINAL;
+CREATE OR REPLACE TYPE StudentType UNDER PersonType (
+credits NUMBER(3),
+GPA REAL,
+MEMBER PROCEDURE addCredits(numCredits IN number),
+MEMBER PROCEDURE getStatus)
+INSTANTIABLE
+NOT FINAL;
+CREATE OR REPLACE TYPE UndergradType UNDER StudentType (
+major VARCHAR2(25),
+MEMBER PROCEDURE changeMajor(newMajor IN varchar2))
+INSTANTIABLE
+FINAL;
+CREATE OR REPLACE TYPE GraduateType UNDER StudentType (
+program VARCHAR2(25),
+MEMBER PROCEDURE changeProgram(newProgram IN varchar2))
+INSTANTIABLE
+NOT FINAL;
+CREATE OR REPLACE TYPE TeachAsstType UNDER GraduateType (
+fundingSource VARCHAR2(25),
+annualStipend REAL)
+INSTANTIABLE
+FINAL;
+CREATE OR REPLACE TYPE FacultyType UNDER PersonType (
+rank VARCHAR2(15),
+salary REAL,
+MEMBER PROCEDURE giveRaise(amountRaise IN real))
+INSTANTIABLE
+FINAL;
+CREATE OR REPLACE TYPE EvalType AS OBJECT (
+evalDate DATE,
+raterName NameType,
+rating NUMBER(2),
+isEvalOf REF FacultyType)
+INSTANTIABLE
+FINAL;
+-- for DeptType we need an array to hold REFs to FacultyType
+CREATE OR REPLACE TYPE RefFacArrayType as VARRAY(10) of REF FacultyType;
+CREATE OR REPLACE TYPE DeptType AS OBJECT (
+deptCode VARCHAR2(3),
+deptName VARCHAR2(35),
+deptOffice VARCHAR2(15),
+phone phoneType,
+hasFaculty RefFacArrayType,
+hasChair REF FacultyType)
+INSTANTIABLE
+FINAL;
+CREATE OR REPLACE TYPE CourseType AS OBJECT (
+cNo VARCHAR2(6),
+cTitle VARCHAR2(50),
+credits NUMBER(2),
+description CLOB,
+isOffering REF DeptType,
+MEMBER PROCEDURE changeDesc(newDesc IN CLOB))
+INSTANTIABLE
+FINAL;
+CREATE OR REPLACE TYPE RefStuArrayType AS VARRAY(50) of REF StudentType;
+CREATE OR REPLACE TYPE ClassSectionType AS OBJECT (
+sectionCode VARCHAR2(3),
+schedule VARCHAR2(10),
+room VARCHAR2(15),
+isSection REF CourseType,
+hasStudent refStuArrayType,
+hasTeacher REF FacultyType,
+hasTA REF TeachAsstType)
+INSTANTIABLE
+FINAL;
+CREATE OR REPLACE TYPE GradeType AS OBJECT(
+grade VARCHAR2(2),
+stu REF StudentType,
+classSect REF ClassSectionType)
+INSTANTIABLE
+FINAL;
+CREATE OR REPLACE TYPE RefCourseArrayType AS VARRAY(300) OF REF CourseType;
+CREATE OR REPLACE TYPE RefClassSectionArrayType AS VARRAY(20) OF REF ClassSectionType;
+CREATE OR REPLACE TYPE RefHasEvalArrayType AS VARRAY(10) OF REF EvalType;
+CREATE OR REPLACE TYPE RefGradeArrayType AS VARRAY(50) OF REF GradeType;
+ALTER TYPE CourseType ADD ATTRIBUTE isPrereqOf RefCourseArrayType CASCADE;
+ALTER TYPE CourseType ADD ATTRIBUTE hasPreq RefCourseArrayType CASCADE;
+ALTER TYPE CourseType ADD ATTRIBUTE hasSection RefClassSectionArrayType CASCADE;
+ALTER TYPE FacultyType ADD ATTRIBUTE advises RefStuArrayType CASCADE;
+ALTER TYPE FacultyType ADD ATTRIBUTE teaches RefClassSectionArrayType CASCADE;
+ALTER TYPE FacultyType ADD ATTRIBUTE hasEval RefHasEvalArrayType CASCADE;
+ALTER TYPE FacultyType ADD ATTRIBUTE belongsTo REF DeptType CASCADE;
+ALTER TYPE FacultyType ADD ATTRIBUTE chairs REF DeptType CASCADE;
+ALTER TYPE StudentType ADD ATTRIBUTE hasAdvisor REF FacultyType CASCADE;
+ALTER TYPE StudentType ADD ATTRIBUTE takesClass RefClassSectionArrayType CASCADE;
+ALTER TYPE StudentType ADD ATTRIBUTE earnedGrade RefGradeArrayType CASCADE;
+ALTER TYPE DeptType ADD ATTRIBUTE offers RefCourseArrayType CASCADE;
+ALTER TYPE ClassSectionType ADD ATTRIBUTE givenStudent RefGradeArrayType CASCADE;
+ALTER TYPE TeachAsstType ADD ATTRIBUTE assists REF ClassSectionType CASCADE;
+CREATE TABLE Faculty OF FacultyType (
+CONSTRAINT Fac_pid_pk PRIMARY KEY (pid),
+CONSTRAINT Fac_rank_cc CHECK (rank IN ('Instructor', 'Assistant', 'Associate', 'Professor')));
+CREATE TABLE Depts OF deptType (
+CONSTRAINT Dept_deptCode_pk PRIMARY KEY(deptCode),
+CONSTRAINT Dept_chair_fk FOREIGN KEY (hasChair) REFERENCES Faculty);
+-- cannot use REF type as primary key or unique att, so use NOT NULL for isEvalof
+CREATE TABLE Evaluations OF EvalType(
+CONSTRAINT Eval_Facpid_fk FOREIGN KEY (isEvalOf) REFERENCES Faculty,
+CONSTRAINT Eval_Fac_nn isEvalOf NOT NULL);
+CREATE TABLE Students OF StudentType(
+CONSTRAINT Stu_stuid_pk PRIMARY KEY(pid),
+CONSTRAINT Stu_Facpid_fk FOREIGN KEY (hasAdvisor) REFERENCES Faculty);
+CREATE TABLE Courses OF CourseType(
+CONSTRAINT Courses_cNo_pk PRIMARY KEY(cNo),
+CONSTRAINT Courses_isOffer_fk FOREIGN KEY (isOffering) REFERENCES Depts);
+CREATE TABLE ClassSections OF ClassSectionType(
+CONSTRAINT ClSect_isSect_code_NN isSection NOT NULL,
+CONSTRAINT ClSect_isSect_fk FOREIGN KEY (isSection) REFERENCES Courses,
+CONSTRAINT ClSect_hasTeacher_fk FOREIGN KEY (hasTeacher) REFERENCES Faculty,
+CONSTRAINT ClSect_hasTA_fk FOREIGN KEY (hasTA) REFERENCES Students);
+CREATE TABLE Grades OF GradeType (
+CONSTRAINT Grades_stu_NN stu NOT NULL,
+CONSTRAINT Grades_Stuid_fk FOREIGN KEY (stu) REFERENCES Students,
+CONSTRAINT Grades_clsect_NN classSect NOT NULL,
+CONSTRAINT Grades_clSect_fk FOREIGN KEY (classSect) REFERENCES ClassSections);
+CONSTRAINT Courses_isPrereq_fk FOREIGN KEY (isPrereqOf) REFERENCES Depts,
+CONSTRAINT Courses_hasPrereq_fk FOREIGN KEY (hawsPrereq) REFERENCES Depts);
+INSERT INTO faculty VALUES(facultytype(1001,nameType('John','Adams'),addressType('100 Main Street','Brooklyn','NY','10121-1234'),phoneType('212','9999999'),'15-JAN-1980','Professor',80000,null,null,null,null,null));
+INSERT INTO faculty VALUES(facultytype(1002,nameType('Susan','Barnes'),addressType('25 Ash Road','Yonkers','NY','11121-1234'),phoneType('914','9999999'),'15-sep-1985','Associate',70000,null,null,null,null,null));
+INSERT INTO depts VALUES(deptType('CSC','Computer Science','Smith192',phoneType('212','5556666'),null,(SELECT REF(F) FROM FACULTY F WHERE PID=1001),null));
+UPDATE faculty SET belongsTo = (SELECT REF(d) FROM Depts d WHERE deptCode='CSC') WHERE pid=1001;
+UPDATE faculty SET belongsTo = (SELECT REF(d) FROM Depts d WHERE deptCode='CSC') WHERE pid=1002;
+UPDATE depts SET hasFaculty=RefFacArrayType((SELECT REF(f) FROM FACULTY F WHERE PID=1001),(SELECT REF(f) FROM FACULTY F WHERE PID=1002),null) WHERE deptCode='CSC';
+SELECT d.hasFaculty FROM depts d;
+INSERT INTO Students VALUES(undergradType(101,nameType('Ann','Chin'),addressType('200 Main Street','Brooklyn','NY','10121-1234'),phoneType('212','8888888'),'15-MAR-2000',36,3.58,(SELECT REF(F) FROM FACULTY F WHERE PID=1001)null,null,'CSC'));
+INSERT INTO Students VALUES(GraduateType(152,nameType('James','Owens'),addressType('300 Main Street','Bronx','NY','10721-1234'),phoneType('845','8888888'),'21-APR-2000',36,3.58,(SELECT REF(F) FROM FACULTY F WHERE PID=1001)null,null,'PhD Math'));
+INSERT INTO Students VALUES(TeachAsstType(190,nameType('Nancy','Monroe'),addressType('200 Main Street','New York','NY','10121-1234'),phoneType('212','5558888'),'15-JUN-2000',36,3.58,(SELECT REF(F) FROM FACULTY F WHERE PID=1001)null,null,'MS CSC','NSF grant',1000,null));
+SELECT DEREF(s.hasAdvisor) FROM Students s WHERE pid=190;
+SELECT s.pid, s.name.lastname, s.name.firstname, s.hasadvisor.name, s.hasadvisor.belongsTo.deptName FROM students s WHERE s.pid=101;
+*************************************************************************************************
