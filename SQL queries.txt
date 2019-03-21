@@ -522,7 +522,7 @@ SELECT s.cNo, s.section FROM Sections AS s WHERE COUNT (s.hasStudents > 30);  //
 DEFINE Juniors AS Select s FROM s IN Undergrads WHERE s.credits >= 60 AND s.credits < 90;  // Creates a defined query, also known as a view, that defines juniors
 SELECT j.pId, j.name FROM j IN Juniors;  // Gets ID and name of all juniors from the defined query "Juniors"
 
-// This an OO database developed in Cachè, making University schema
+// This an OO database developed in CachÃ¨, making University schema
 **************************************************************************************************
 Class University.Address Extends (%SerialObject) {
 Property Street As %String (MAXLEN = 80);
