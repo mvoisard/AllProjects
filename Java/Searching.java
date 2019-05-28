@@ -129,7 +129,7 @@ public class Searching {
         
         // Using our custom-built binaryIterativeSearch() function, which utilizes iteration
         
-        BinarySearch ob = new BinarySearch();  // Utilizing object-oriented programming this time
+        Searching ob = new Searching();  // Utilizing object-oriented programming this time
         int result2 = ob.binaryIterativeSearch(arr, key);  // Notice the length of the array is not needed as an argument to this function
         if (result2 == -1) 
             System.out.println("Iterative binary search says the element is not present in the array."); 
