@@ -57,7 +57,7 @@ public class Searching {
     { 
         if (r >= l) { 
   
-            // Find the mid1 nad mid2 
+            // Find the mid and mid2 by dividing by 3, or using ternary 
             int mid1 = l + (r - l) / 3; 
             int mid2 = r - (r - l) / 3; 
   
