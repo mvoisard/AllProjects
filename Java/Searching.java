@@ -15,16 +15,16 @@ public class Searching {
         return -1; 
     } 
   
-    public static int binaryRecursiveSearch(int arr[], int first, int last, int key){  
-        if (last >= first){  
+    public static int binaryRecursiveSearch(int arr[], int first, int last, int key) {  
+        if (last >= first) {   // Validating that there is at minimum one element in the array  
             int mid = first + (last - first) / 2;   // Dividing by 2 because binary to get the index in the middle of the array
-            if (arr[mid] == key){      // After trial and error, this if statement will finally return the index of the integer
+            if (arr[mid] == key) {   // After trial and error, this if statement will finally return the index of the integer
                return mid;            
             }  
-            if (arr[mid] > key){  
-               return binaryRecursiveSearch(arr, first, mid-1, key); // Search in left subarray  
+            if (arr[mid] > key) {  
+               return binaryRecursiveSearch(arr, first, mid-1, key); // Search in left subarray, moving down one element at a time  
             } else {  
-               return binaryRecursiveSearch(arr, mid+1, last, key); // Search in right subarray  
+               return binaryRecursiveSearch(arr, mid+1, last, key); // Search in right subarray, moving up one element at a time
             }  
         }  
         return -1;  
@@ -32,7 +32,7 @@ public class Searching {
     
     public static int binaryIterativeSearch(int arr[], int x) 
     { 
-        int l = 0, r = arr.length - 1; 
+        int l = 0, r = arr.length - 1;   // Declaring accumulator and variable for last index of array
         while (l <= r) { 
             int m = l + (r - l) / 2; 
   
