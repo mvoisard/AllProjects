@@ -255,7 +255,6 @@
                         fieldValues = [];
                         var datasetName = document.getElementById("Dataset_" + index).value;
                         var BackgroundColor = backgroundColors[index % backgroundColors.length];
-                        var lineStyle = document.getElementsByClassName("lineStyler")[index].value;
                         for (var count = 0; count < numberOfFields; count++) {
                             var fieldValue = document.getElementById("Amount_" + theCounter).value;
                             theCounter++;
@@ -264,6 +263,7 @@
                                 backgroundColors2.push(backgroundColors[count % backgroundColors.length]);
                             if (count == numberOfFields - 1) {
                                 if (chartChooser == 'line') {
+								    var lineStyle = document.getElementsByClassName("lineStyler")[index].value;
                                     if (lineStyle == 'Normal') {
                                         DataSets.push({
                                             label: datasetName,
