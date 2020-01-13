@@ -1,0 +1,552 @@
+<!doctype HTML>
+<html>
+<head>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+</head>
+<body>
+        How many datasets (groups of data) will there be? (Default is 1) <input type="text" value="1" id="numberOfDatasets" />
+        <br />
+        How many chart fields on the x-axis will there be? <input type="text" id="numberOfFields" />
+        <br />
+        Choose the graph/chart you wish to make:
+        <select id="ChartChooser" onchange="ShowOptions()">
+            <option selected="selected">-</option>
+            <option value="bar">Bar Graph</option>
+            <option value="line">Line Graph</option>
+            <option value="doughnut">Doughnut Chart</option>
+            <option value="pie">Pie Chart</option>
+            <option value="scatter">Scatter Plot</option>
+        </select>
+        <div id="dataInput"></div>
+        <span id="xAndyAxes" style="display: none; visibility: hidden">Title of x-axis: <input type="text" placeholder="Independent Variable" id="xAxis" />&nbsp;Title of y-axis: <input type="text" placeholder="Dependent Variable" id="yAxis" />&nbsp;</span>
+        <span id="barDirection" style="display: none; visibility: hidden">
+            <input type="radio" name="editList" id="vertical" value="vertical" checked="checked" /><label for="vertical">Vertical</label>
+            <input type="radio" name="editList" id="horizontal" value="horizontal"/><label for="horizontal">Horizontal</label>
+        </span>
+        <span id="stacked" style="display: none; visibility: hidden">
+            Stacked? <input type="radio" name="stackedList" id="yesStacked" /><label for="yesStacked">Yes</label>
+            <input type="radio" name="stackedList" id="noStacked" checked="checked" /><label for="noStacked">No</label>
+        </span>
+        <span id="interpolation" style="display: none; visibility: hidden">
+            Cubic (curved) or linear interpolation? <input type="radio" name="interpolationList" id="cubic" checked="checked" /><label for="cubic">Cubic</label>
+            <input type="radio" name="interpolationList" id="linear" /><label for="linear">Linear</label>
+        </span>
+        <span id="pointShapes" style="display: none; visibility: hidden">
+            Point shapes:&nbsp;
+            <select id="PointShaper">
+                <option value="circle">Circle</option>
+                <option value="triangle">Triangle</option>
+                <option value="rect">Rectangle</option>
+                <option value="rectRounded">Rounded Rectangle</option>
+                <option value="rectRot">Diamond</option>
+                <option value="cross">Cross</option>
+                <option value="crossRot">X</option>
+                <option value="star">Star</option>
+                <option value="line">Line</option>
+                <option value="dash">Dash</option>
+            </select>
+        </span>
+        Title of the Chart: <input type="text" id="title" disabled="disabled" />&nbsp;
+        <input type="button" id="ChartMaker" value="Make Chart" disabled="disabled" onclick="MakeChart()" />
+        <canvas id="myChart" style="position: relative; height: 40vh; width: 80vw; margin: 0 auto; display: none"></canvas>
+        <script>
+            function ShowOptions() {
+                var chartChooser = document.getElementById('ChartChooser').value;
+                document.getElementById("title").disabled = false;
+                document.getElementById("ChartMaker").disabled = false;
+                var numberOfDatasets = document.getElementById("numberOfDatasets").value;
+                var numberOfFields = document.getElementById("numberOfFields").value;
+                var dataInput = document.getElementById("dataInput");
+                while (dataInput.firstChild) {
+                    dataInput.removeChild(dataInput.firstChild);
+                }
+                if (chartChooser != 'scatter') {
+                    for (var counter = 0; counter < numberOfFields; counter++) {
+                        var counter2 = counter + 1;
+                        var label1 = document.createElement("label");
+                        label1.innerHTML = "Name of Field #" + counter2 + ":&nbsp;";
+                        dataInput.appendChild(label1);
+                        var textBox1 = document.createElement("input");
+                        textBox1.type = "text";
+                        textBox1.id = "FieldName_" + counter;
+                        dataInput.appendChild(textBox1);
+                        var breakLine = document.createElement("br");
+                        dataInput.appendChild(breakLine);
+                    }
+                    var theCounter = 0;
+                    for (var count = 0; count < numberOfDatasets; count++) {
+                        var count2 = count + 1;
+                        var datasetLabel = document.createElement("strong");
+                        datasetLabel.innerHTML = "Name of Dataset #" + count2 + ":&nbsp;";
+                        datasetLabel.style.textDecoration = "underline";
+                        dataInput.appendChild(datasetLabel);
+                        var dataset = document.createElement("input");
+                        dataset.type = "text";
+                        dataset.placeholder = "Dataset_" + count2;
+                        dataset.id = "Dataset_" + count;
+                        dataInput.appendChild(dataset);
+                        if (chartChooser == 'line')
+                        {
+                            var lineStyleLabel = document.createElement("label");
+                            lineStyleLabel.innerHTML = "&nbsp;Choose style of dataset's line:&nbsp;";
+                            dataInput.appendChild(lineStyleLabel);
+                            var lineStyle = document.createElement("select");
+                            lineStyle.className = "lineStyler";
+                            var normalStyle = document.createElement("option");
+                            normalStyle.value = "Normal";
+                            normalStyle.text = "Normal";
+                            normalStyle.selected = true;
+                            lineStyle.appendChild(normalStyle);
+                            var filledStyle = document.createElement("option");
+                            filledStyle.value = "Filled";
+                            filledStyle.text = "Filled";
+                            lineStyle.appendChild(filledStyle);
+                            var dashedStyle = document.createElement("option");
+                            dashedStyle.value = "Dashed";
+                            dashedStyle.text = "Dashed";
+                            lineStyle.appendChild(dashedStyle);
+                            dataInput.appendChild(lineStyle);
+                        }
+                        var breakLine = document.createElement("br");
+                        dataInput.appendChild(breakLine);
+                        for (var index = 0; index < numberOfFields; index++) {
+                            var index2 = index + 1;
+                            var label2 = document.createElement("label");
+                            label2.innerHTML = "&nbsp;Value/Amount of Field #" + index2 + ":&nbsp;";
+                            dataInput.appendChild(label2);
+                            var textBox2 = document.createElement("input");
+                            textBox2.type = "text";
+                            textBox2.id = "Amount_" + theCounter;
+                            theCounter++;
+                            dataInput.appendChild(textBox2);
+                            var breakLine2 = document.createElement("br");
+                            dataInput.appendChild(breakLine2);
+                        }
+                    }
+                }
+                else {
+                    var theCounter = 0;
+                    for (var count = 0; count < numberOfDatasets; count++) {
+                        var count2 = count + 1;
+                        var datasetLabel = document.createElement("strong");
+                        datasetLabel.innerHTML = "Name of Dataset #" + count2 + ":&nbsp;";
+                        datasetLabel.style.textDecoration = "underline";
+                        dataInput.appendChild(datasetLabel);
+                        var dataset = document.createElement("input");
+                        dataset.type = "text";
+                        dataset.placeholder = "Dataset_" + count2;
+                        dataset.id = "Dataset_" + count;
+                        dataInput.appendChild(dataset);
+                        var breakLine = document.createElement("br");
+                        dataInput.appendChild(breakLine);
+                        for (var index = 0; index < numberOfFields; index++) {
+                            var index2 = index + 1;
+                            var label2 = document.createElement("label");
+                            label2.innerHTML = "&nbsp;Value/Amount of x-coordinate #" + index2 + ":&nbsp;";
+                            dataInput.appendChild(label2);
+                            var textBox2 = document.createElement("input");
+                            textBox2.type = "text";
+                            textBox2.id = "x_" + theCounter;
+                            dataInput.appendChild(textBox2);
+                            var label3 = document.createElement("label");
+                            label3.innerHTML = "&nbsp;Value/Amount of y-coordinate #" + index2 + ":&nbsp;";
+                            dataInput.appendChild(label3);
+                            var textBox3 = document.createElement("input");
+                            textBox3.type = "text";
+                            textBox3.id = "y_" + theCounter;
+                            theCounter++;
+                            dataInput.appendChild(textBox3);
+                            var breakLine2 = document.createElement("br");
+                            dataInput.appendChild(breakLine2);
+                        }
+                    }
+                }
+                if (chartChooser == 'bar' || chartChooser == 'line' || chartChooser == 'scatter')
+                    document.getElementById("xAndyAxes").style = "display: block; visibility: visible";
+                if (chartChooser == 'bar') {
+                    document.getElementById('barDirection').style = "display: block; visibility: visible";
+                    document.getElementById('stacked').style = "display: block; visibility: visible";
+                    document.getElementById('interpolation').style = "display: none; visibility: hidden";
+                    document.getElementById('pointShapes').style = "display: none; visibility: hidden";
+                }
+                if (chartChooser == 'line') {
+                    document.getElementById('interpolation').style = "display: block; visibility: visible";
+                    document.getElementById('pointShapes').style = "display: block; visibility: visible";
+                    document.getElementById('barDirection').style = "display: none; visibility: hidden";
+                    document.getElementById('stacked').style = "display: none; visibility: hidden";
+                }
+            }
+
+            function MakeChart() {
+                var ctx = document.getElementById('myChart');
+                document.getElementById('myChart').style.display = 'block';
+                var chartChooser = document.getElementById('ChartChooser').value;
+                if (chartChooser == 'bar' && document.getElementById('horizontal').checked)
+                    chartChooser = 'horizontalBar';
+                if (chartChooser == 'bar' && document.getElementById('vertical').checked)
+                    chartChooser = 'bar';
+                var ifStacked = false;
+                if (document.getElementById("yesStacked").checked)
+                    ifStacked = true;
+                else
+                    ifStacked = false;
+                var LineTension = 0.4;
+                var pointShape;
+                if (chartChooser == 'line') {
+                    if (document.getElementById('linear').checked)
+                        LineTension = 0;
+                    else
+                        LineTension = 0.4;
+                    pointShape = document.getElementById("PointShaper").value;
+                }
+                var numberOfDatasets = document.getElementById('numberOfDatasets').value;
+                var numberOfFields = document.getElementById('numberOfFields').value;
+                var title = document.getElementById('title').value;
+                var xAxis = document.getElementById('xAxis').value;
+                var yAxis = document.getElementById('yAxis').value;
+                var DataSets = [];
+                var fieldNames = [];
+                var fieldValues = [];
+                var scatterArray = [];
+                var backgroundColors = ['rgb(255, 99, 132)',
+                    'rgb(255, 159, 64)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)',
+                    'rgb(54, 162, 235)',
+                    'rgb(153, 102, 255)',
+                    'rgb(201, 203, 207)',
+                    'rgb(0, 0, 0)',
+                    'rgb(255, 255, 255)',
+                    'rgb(255, 0, 0)',
+                    'rgb(0, 255, 0)',
+                    'rgb(150, 75, 0)'];
+                var backgroundColors2 = [];
+                if (chartChooser == "scatter") {
+                    var theAccumulator = 0;
+                    for (var accumulator = 0; accumulator < numberOfDatasets; accumulator++) {
+                        scatterArray = [];
+                        var datasetName = document.getElementById("Dataset_" + accumulator).value;
+                        var BackgroundColor = backgroundColors[accumulator % backgroundColors.length];
+                        for (var accumulator2 = 0; accumulator2 < numberOfFields; accumulator2++) {
+                            var xValue = document.getElementById("x_" + theAccumulator).value;
+                            var yValue = document.getElementById("y_" + theAccumulator).value;
+                            theAccumulator++;
+                            scatterArray.push({ x: xValue, y: yValue });
+                            if (accumulator2 == numberOfFields - 1) {
+                                DataSets.push({
+                                    label: datasetName,
+                                    backgroundColor: BackgroundColor,
+                                    data: scatterArray,
+                                    borderWidth: 1
+                                });
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (var counter = 0; counter < numberOfFields; counter++) {
+                        var fieldName = document.getElementById("FieldName_" + counter).value;
+                        fieldNames.push(fieldName);
+                    }
+                    var theCounter = 0;
+                    for (var index = 0; index < numberOfDatasets; index++) {
+                        fieldValues = [];
+                        var datasetName = document.getElementById("Dataset_" + index).value;
+                        var BackgroundColor = backgroundColors[index % backgroundColors.length];
+                        var lineStyle = document.getElementsByClassName("lineStyler")[index].value;
+                        for (var count = 0; count < numberOfFields; count++) {
+                            var fieldValue = document.getElementById("Amount_" + theCounter).value;
+                            theCounter++;
+                            fieldValues.push(fieldValue);
+                            if (chartChooser == "doughnut" || chartChooser == "pie" || chartChooser == "scatter")
+                                backgroundColors2.push(backgroundColors[count % backgroundColors.length]);
+                            if (count == numberOfFields - 1) {
+                                if (chartChooser == 'line') {
+                                    if (lineStyle == 'Normal') {
+                                        DataSets.push({
+                                            label: datasetName,
+                                            backgroundColor: BackgroundColor,
+                                            borderColor: BackgroundColor,
+                                            data: fieldValues,
+                                            borderWidth: 1,
+                                            lineTension: LineTension,
+                                            fill: false,
+                                            pointRadius: 5,
+                                            pointHoverRadius: 10
+                                        });
+                                    }
+                                    if (lineStyle == 'Filled') {
+                                        DataSets.push({
+                                            label: datasetName,
+                                            backgroundColor: BackgroundColor,
+                                            borderColor: BackgroundColor,
+                                            data: fieldValues,
+                                            borderWidth: 1,
+                                            lineTension: LineTension,
+                                            fill: true,
+                                            pointRadius: 5,
+                                            pointHoverRadius: 10
+                                        });
+                                    }
+                                    if (lineStyle == 'Dashed') {
+                                        DataSets.push({
+                                            label: datasetName,
+                                            backgroundColor: BackgroundColor,
+                                            borderColor: BackgroundColor,
+                                            data: fieldValues,
+                                            borderWidth: 1,
+                                            lineTension: LineTension,
+                                            fill: false,
+                                            borderDash: [5, 5],
+                                            pointRadius: 5,
+                                            pointHoverRadius: 10
+                                        });
+                                    }
+                                }
+                                else if (chartChooser != 'scatter') {
+                                    DataSets.push({
+                                        label: datasetName,
+                                        backgroundColor: BackgroundColor,
+                                        data: fieldValues,
+                                        borderWidth: 1
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                if (chartChooser == "bar") {
+                    var myChart = new Chart(ctx, {
+                        type: chartChooser,
+                        data: {
+                            labels: fieldNames,
+                            datasets: DataSets
+                        },
+                        options: {
+                            scales: {
+                                xAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: xAxis
+                                    },
+                                    stacked: ifStacked
+                                }],
+                                yAxes: [{
+                                    ticks: {
+                                        beginAtZero: true
+                                    },
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: yAxis
+                                    },
+                                    stacked: ifStacked
+                                }]
+                            },
+                            responsive: true,
+                            animation: {
+                                animateScale: true,
+                                animateRotate: true
+                            },
+                            title: {
+                                display: true,
+                                text: title
+                            },
+                            tooltips: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            hover: {
+                                mode: 'nearest',
+                                intersect: true
+                            }
+                        }
+                    });
+                }
+                if (chartChooser == "horizontalBar") {
+                    window.myHorizontalBar = new Chart(ctx, {
+                        type: chartChooser,
+                        data: {
+                            labels: fieldNames,
+                            datasets: DataSets
+                        },
+                        options: {
+                            scales: {
+                                xAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: xAxis
+                                    },
+                                    stacked: ifStacked,
+                                    ticks: {
+                                        beginAtZero: true
+                                    }
+                                }],
+                                yAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: yAxis
+                                    },
+                                    stacked: ifStacked
+                                }]
+                            },
+                            responsive: true,
+                            animation: {
+                                animateScale: true,
+                                animateRotate: true
+                            },
+                            title: {
+                                display: true,
+                                text: title
+                            },
+                            tooltips: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            hover: {
+                                mode: 'nearest',
+                                intersect: true
+                            }
+                        }
+                    });
+                }
+                if (chartChooser == "line") {
+                    var myChart = new Chart(ctx, {
+                        type: chartChooser,
+                        data: {
+                            labels: fieldNames,
+                            datasets: DataSets
+                        },
+                        options: {
+                            scales: {
+                                xAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: xAxis
+                                    },
+                                    stacked: ifStacked
+                                }],
+                                yAxes: [{
+                                    ticks: {
+                                        beginAtZero: true
+                                    },
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: yAxis
+                                    },
+                                    stacked: ifStacked
+                                }]
+                            },
+                            responsive: true,
+                            animation: {
+                                animateScale: true,
+                                animateRotate: true
+                            },
+                            title: {
+                                display: true,
+                                text: title
+                            },
+                            tooltips: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            hover: {
+                                mode: 'nearest',
+                                intersect: true
+                            },
+                            elements: {
+                                point: {
+                                    pointStyle: pointShape
+                                }
+                            }
+                        }
+                    });
+                }
+                if (chartChooser == "doughnut" || chartChooser == "pie") {
+                    var myChart = new Chart(ctx, {
+                        type: chartChooser,
+                        data: {
+                            labels: fieldNames,
+                            datasets: [{
+                                backgroundColor: backgroundColors2,
+                                data: fieldValues,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            animation: {
+                                animateScale: true,
+                                animateRotate: true
+                            },
+                            title: {
+                                display: true,
+                                text: title
+                            },
+                            tooltips: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            hover: {
+                                mode: 'nearest',
+                                intersect: true
+                            }
+                        }
+                    });
+                }
+                if (chartChooser == "scatter") {
+                    window.myScatter = Chart.Scatter(ctx, {
+                        data: {
+                            datasets: DataSets
+                        },
+                        options: {
+                            scales: {
+                                xAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: xAxis
+                                    }
+                                }],
+                                yAxes: [{
+                                    ticks: {
+                                        beginAtZero: true
+                                    },
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: yAxis
+                                    }
+                                }]
+                            },
+                            responsive: true,
+                            animation: {
+                                animateScale: true,
+                                animateRotate: true
+                            },
+                            title: {
+                                display: true,
+                                text: title
+                            },
+                            tooltips: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            hover: {
+                                mode: 'nearest',
+                                intersect: true
+                            }
+                        }
+                    });
+                }
+            }
+        </script>
+</body>
+</html>
